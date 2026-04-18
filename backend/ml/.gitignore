@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pkl
+*.csv
+.env
+node_modules/
+build/
+dist/
+.vscode/
+.DS_Store

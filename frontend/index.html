@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="GradeDex — student academic performance prediction using an ordinal threshold ensemble. Predict grades, upload CSVs, and inspect model behavior." />
+  <title>GradeDex — Student Performance Predictor</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="css/style.css?v=12" />
+</head>
+<body>
+
+<div class="app-wrapper">
+
+<!-- Floating clouds (visible in light mode only) -->
+<div class="clouds-layer" aria-hidden="true">
+  <div class="cloud cloud-1"></div>
+  <div class="cloud cloud-2"></div>
+  <div class="cloud cloud-3"></div>
+  <div class="cloud cloud-4"></div>
+  <div class="cloud cloud-5"></div>
+</div>
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="18" fill="url(#bg)"/><path d="M10 22l5-8 4 6 3-4 4 6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="bg" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs></svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">GradeDex</span>
+        <span class="brand-sub">ML Predictor</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-section="dashboard" id="nav-dashboard">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </span>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-section="predict" id="nav-predict">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </span>
+        <span class="nav-label">Predict Student</span>
+      </a>
+      <a href="#" class="nav-item" data-section="bulk" id="nav-bulk">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </span>
+        <span class="nav-label">Bulk Upload</span>
+      </a>
+      <a href="#" class="nav-item" data-section="model" id="nav-model">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </span>
+        <span class="nav-label">Model Insights</span>
+      </a>
+      <a href="#" class="nav-item" data-section="about" id="nav-about">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </span>
+        <span class="nav-label">About</span>
+      </a>
+    </nav>
+
+    <!-- Theme toggle + status -->
+    <div class="sidebar-theme-row">
+      <button class="theme-toggle" id="btn-theme"
+              title="Toggle light / dark mode" aria-label="Toggle theme">
+        <!-- Sun icon (shown in dark mode) -->
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1"  x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22"  x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64"  x2="19.78" y2="4.22"/>
+        </svg>
+        <!-- Moon icon (shown in light mode) -->
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+      <span class="sidebar-theme-label" id="theme-label">Light Mode</span>
+    </div>
+
+    <div class="sidebar-status">
+      <div class="status-dot" id="status-dot"></div>
+      <span class="status-text" id="status-text">Checking model…</span>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ──────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 1: DASHBOARD
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="content-section active" id="section-dashboard">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Dashboard</h1>
+          <p class="section-sub">Ordinal-threshold student grade prediction system</p>
+        </div>
+        <button class="btn btn-primary" id="btn-train">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M5 3l14 9-14 9V3z"/></svg>
+          Train Model
+        </button>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon icon-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Model Accuracy</span>
+            <span class="stat-value" id="stat-accuracy">—</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon icon-violet">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Total Students</span>
+            <span class="stat-value" id="stat-total">—</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon icon-emerald">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">F1-Score</span>
+            <span class="stat-value" id="stat-f1">—</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon icon-amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Best Model</span>
+            <span class="stat-value stat-small" id="stat-best-model">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="charts-row">
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>Class Distribution</h3>
+            <span class="badge badge-smote" id="smote-badge" style="display:none">SMOTE Applied</span>
+          </div>
+          <div class="chart-wrap-sm">
+            <canvas id="chart-distribution"></canvas>
+          </div>
+          <div class="smote-info" id="smote-info" style="display:none"></div>
+        </div>
+        <div class="card chart-card chart-card-wide">
+          <div class="card-header">
+            <h3>Model Comparison</h3>
+            <span class="chart-legend-hint">Accuracy & F1-Score (%)</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="chart-comparison"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Train hint -->
+      <div class="hint-banner" id="hint-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        No model loaded. Click <strong>Train Model</strong> to begin (may take several minutes).
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 2: PREDICT STUDENT
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="content-section" id="section-predict">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Predict Student</h1>
+          <p class="section-sub">Fill in available fields — missing ones are auto-imputed by the model</p>
+        </div>
+      </div>
+
+      <div class="predict-layout">
+        <form class="card predict-form" id="predict-form" autocomplete="off">
+
+          <!-- Academic Factors -->
+          <div class="form-group-title">
+            <span class="fgt-icon">📚</span> Academic Factors
+          </div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="f-hours">Hours Studied / week</label>
+              <input type="number" id="f-hours" name="Hours_Studied" min="0" max="50" placeholder="e.g. 23" />
+            </div>
+            <div class="form-field">
+              <label for="f-attendance">Attendance (%)</label>
+              <input type="number" id="f-attendance" name="Attendance" min="0" max="100" placeholder="e.g. 84" />
+            </div>
+            <div class="form-field">
+              <label for="f-prev">Previous Scores</label>
+              <input type="number" id="f-prev" name="Previous_Scores" min="0" max="100" placeholder="e.g. 73" />
+            </div>
+            <div class="form-field">
+              <label for="f-sleep">Sleep Hours / night</label>
+              <input type="number" id="f-sleep" name="Sleep_Hours" min="0" max="12" placeholder="e.g. 7" />
+            </div>
+            <div class="form-field">
+              <label for="f-tutor">Tutoring Sessions</label>
+              <input type="number" id="f-tutor" name="Tutoring_Sessions" min="0" max="10" placeholder="e.g. 2" />
+            </div>
+            <div class="form-field">
+              <label for="f-physical">Physical Activity (hrs/wk)</label>
+              <input type="number" id="f-physical" name="Physical_Activity" min="0" max="10" placeholder="e.g. 3" />
+            </div>
+          </div>
+
+          <!-- Learning Environment -->
+          <div class="form-group-title">
+            <span class="fgt-icon">🏫</span> Learning Environment
+          </div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="f-parental-inv">Parental Involvement</label>
+              <select id="f-parental-inv" name="Parental_Involvement">
+                <option value="">— Select —</option>
+                <option>Low</option><option>Medium</option><option>High</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="f-resources">Access to Resources</label>
+              <select id="f-resources" name="Access_to_Resources">
+                <option value="">— Select —</option>
+                <option>Low</option><option>Medium</option><option>High</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="f-extra">Extracurricular Activities</label>
+              <select id="f-extra" name="Extracurricular_Activities">
+                <option value="">— Select —</option>
+                <option>Yes</option><option>No</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="f-internet">Internet Access</label>
+              <select id="f-internet" name="Internet_Access">
+                <option value="">— Select —</option>
+                <option>Yes</option><option>No</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="f-school">School Type</label>
+              <select id="f-school" name="School_Type">
+                <option value="">— Select —</option>
+                <option>Public</option><option>Private</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="f-teacher">Teacher Quality</label>
+              <select id="f-teacher" name="Teacher_Quality">
+                <option value="">— Select (auto-imputed if blank) —</option>
+                <option>Low</option><option>Medium</option><option>High</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Personal & Socioeconomic -->
+          <div class="form-group-title">
+            <span class="fgt-icon">👤</span> Personal &amp; Socioeconomic
+          </div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="f-motivation">Motivation Level</label>
+              <select id="f-motivation" name="Motivation_Level">
+                <option value="">— Select —</option>
+                <option>Low</option><option>Medium</option><option>High</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="f-income">Family Income</label>
+              <select id="f-income" name="Family_Income">
+                <option value="">— Select (auto-imputed if blank) —</option>
+                <option>Low</option><option>Medium</option><option>High</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="f-peer">Peer Influence</label>
+              <select id="f-peer" name="Peer_Influence">
+                <option value="">— Select —</option>
+                <option>Negative</option><option>Neutral</option><option>Positive</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="f-disability">Learning Disabilities</label>
+              <select id="f-disability" name="Learning_Disabilities">
+                <option value="">— Select —</option>
+                <option>Yes</option><option>No</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="f-edu">Parental Education Level</label>
+              <select id="f-edu" name="Parental_Education_Level">
+                <option value="">— Select (auto-imputed if blank) —</option>
+                <option>High School</option><option>College</option><option>Postgraduate</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="f-distance">Distance from Home</label>
+              <select id="f-distance" name="Distance_from_Home">
+                <option value="">— Select (auto-imputed if blank) —</option>
+                <option>Near</option><option>Moderate</option><option>Far</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="f-gender">Gender</label>
+              <select id="f-gender" name="Gender">
+                <option value="">— Select —</option>
+                <option>Male</option><option>Female</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost" id="btn-clear-form">Clear</button>
+            <button type="submit" class="btn btn-primary" id="btn-predict">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M5 3l14 9-14 9V3z"/></svg>
+              Predict Grade
+            </button>
+          </div>
+        </form>
+
+        <!-- Result panel -->
+        <div class="predict-result" id="predict-result" style="display:none">
+          <div class="card result-card">
+            <div class="result-grade-badge" id="result-badge">—</div>
+            <div class="result-grade-label">Predicted Grade</div>
+            <div id="result-grade-desc" style="font-size:12px;color:var(--text-muted);margin-bottom:16px;font-weight:500"></div>
+            <div class="result-confidence">
+              <span>Confidence</span>
+              <strong id="result-confidence-val">—</strong>
+            </div>
+            <div class="prob-bars" id="prob-bars"></div>
+          </div>
+          <div class="card intervention-card" id="single-intervention" style="display:none">
+            <div class="intervention-head">
+              <div class="intervention-title-group">
+                <span class="intervention-name" id="single-risk-name">Current Student</span>
+                <span class="intervention-email" id="single-risk-email">Not provided</span>
+              </div>
+              <span class="badge badge-low">At Risk</span>
+            </div>
+            <div class="intervention-scroll" id="single-intervention-content"></div>
+            <div class="intervention-actions">
+              <button class="btn btn-ghost btn-sm" id="single-download-report" type="button">Download PDF</button>
+              <a class="btn btn-primary btn-sm" id="single-open-email" href="#">Open Email</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 3: BULK UPLOAD
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="content-section" id="section-bulk">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Bulk Upload</h1>
+          <p class="section-sub">Upload a CSV of students — get predictions for each row</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <p class="upload-title">Drag &amp; drop your CSV here</p>
+          <p class="upload-sub">or click to browse</p>
+          <input type="file" id="file-input" accept=".csv" style="display:none" />
+        </div>
+
+        <div class="file-info" id="file-info" style="display:none">
+          <div class="file-meta">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span id="file-name-display">—</span>
+            <span class="file-rows" id="file-rows-display"></span>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="btn-remove-file">✕ Remove</button>
+        </div>
+
+        <div class="bulk-actions" id="bulk-actions" style="display:none">
+          <button class="btn btn-primary" id="btn-process">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M5 3l14 9-14 9V3z"/></svg>
+            Process &amp; Predict All
+          </button>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="card" id="bulk-results" style="display:none">
+        <div class="card-header">
+          <h3 id="bulk-result-title">Predictions</h3>
+          <button class="btn btn-success btn-sm" id="btn-download">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download CSV
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="results-table" id="bulk-table">
+            <thead id="bulk-table-head"></thead>
+            <tbody id="bulk-table-body"></tbody>
+          </table>
+        </div>
+        <div class="table-pagination" id="bulk-pagination"></div>
+      </div>
+
+      <div class="card" id="bulk-interventions" style="display:none">
+        <div class="card-header">
+          <h3 id="bulk-intervention-title">At-Risk Student Interventions</h3>
+          <span class="badge badge-low" id="bulk-risk-count"></span>
+        </div>
+        <div class="intervention-list" id="bulk-intervention-list"></div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 4: MODEL INSIGHTS
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="content-section" id="section-model">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Model Insights</h1>
+          <p class="section-sub">Performance metrics, feature importance, and training details</p>
+        </div>
+      </div>
+
+      <!-- Metrics table -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Model Comparison</h3>
+          <span class="badge badge-primary">5-fold CV</span>
+        </div>
+        <div class="table-wrap">
+          <table class="results-table" id="metrics-table">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Accuracy</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1-Score</th>
+                <th>CV F1 (mean)</th>
+              </tr>
+            </thead>
+            <tbody id="metrics-table-body">
+              <tr><td colspan="6" class="empty-state">Train the model first</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Feature importance + params -->
+      <div class="charts-row">
+        <div class="card chart-card chart-card-wide">
+          <div class="card-header">
+            <h3>Feature Influence</h3>
+            <span class="chart-legend-hint">Top 10 weighted signals</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="chart-importance"></canvas>
+          </div>
+        </div>
+        <div class="card model-params-card">
+          <div class="card-header"><h3>Model Configuration</h3></div>
+          <div id="params-list" class="params-list">
+            <p class="empty-state">Train first</p>
+          </div>
+          <div class="card-header" style="margin-top:1.5rem"><h3>Class Balancing</h3></div>
+          <div id="smote-detail-list" class="params-list" style="max-height:280px;overflow-y:auto">
+            <p class="empty-state">Train first</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Confusion Matrix -->
+      <div class="charts-row" style="margin-top:24px">
+        <div class="card chart-card chart-card-wide">
+          <div class="card-header">
+            <h3>Confusion Matrix</h3>
+            <div style="display:flex;gap:12px;align-items:center;font-size:11px;color:var(--text-muted)">
+              <span style="color:#6366f1">■</span> Correct (diagonal)
+              <span style="color:#ef4444">■</span> Errors
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <canvas id="chart-confusion" style="display:block"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>Classification Report</h3>
+            <span class="badge badge-primary">Per-class metrics</span>
+          </div>
+          <div class="table-wrap">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>Grade</th><th>Precision</th><th>Recall</th><th>F1-Score</th><th>Support</th>
+                </tr>
+              </thead>
+              <tbody id="clf-report-body">
+                <tr><td colspan="5" class="empty-state">Train the model first</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 5: ABOUT
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="content-section" id="section-about">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">About GradeDex</h1>
+          <p class="section-sub">Academic project — ML-based student performance prediction</p>
+        </div>
+      </div>
+
+      <div class="about-grid">
+        <div class="card about-card">
+          <div class="about-icon">🎓</div>
+          <h3>Project Overview</h3>
+          <p>GradeDex is an end-to-end machine learning web application that predicts student academic performance using real-world structured data. It is inspired by the research paper <em>"Predicting Student Performance Using Deep Learning and Machine Learning Techniques"</em>, adapted to use only Machine Learning models.</p>
+        </div>
+        <div class="card about-card">
+          <div class="about-icon">🤖</div>
+          <h3>Primary Model: Ordinal Logistic</h3>
+          <p>The production model trains <strong>7 logistic regressions</strong> for the thresholds <code>score ≥ 60, 65, 70, 75, 80, 85, 90</code>. Their cumulative probabilities are converted into the fixed grade bands <strong>F, D, C, B, B+, A, AA, AAA</strong>, which aligns the model directly with the grading rubric.</p>
+        </div>
+        <div class="card about-card">
+          <div class="about-icon">🩺</div>
+          <h3>Missing Value Handling</h3>
+          <p>Four columns have confirmed missing values: <code>Teacher_Quality</code>, <code>Distance_from_Home</code>, <code>Parental_Education_Level</code>, and <code>Family_Income</code>. All are imputed using <strong>mode (most frequent)</strong> strategy. Numeric features use <strong>median imputation</strong> for robustness against outliers.</p>
+        </div>
+        <div class="card about-card">
+          <div class="about-icon">⚖️</div>
+          <h3>Why This Model Wins</h3>
+          <p>The grade labels are ordered buckets of <code>Exam_Score</code>, so the model predicts each score boundary directly instead of treating grades as unrelated classes. That reduces boundary mistakes and improved held-out accuracy from the old multiclass XGBoost baseline to above <strong>95%</strong>.</p>
+        </div>
+        <div class="card about-card">
+          <div class="about-icon">📊</div>
+          <h3>Dataset</h3>
+          <p>6,608 student records with 19 features covering academic habits, socioeconomic factors, and learning environment. Target variable: <code>Exam_Score</code> bucketed into <strong>F</strong> (&lt;60), <strong>D</strong> (60-64), <strong>C</strong> (65-69), <strong>B</strong> (70-74), <strong>B+</strong> (75-79), <strong>A</strong> (80-84), <strong>AA</strong> (85-89), and <strong>AAA</strong> (&ge;90).</p>
+        </div>
+        <div class="card about-card">
+          <div class="about-icon">🛠️</div>
+          <h3>Tech Stack</h3>
+          <p><strong>Backend:</strong> Python, FastAPI, scikit-learn, XGBoost (baseline comparison), pandas, numpy, joblib.<br/><strong>Frontend:</strong> Vanilla HTML/CSS/JavaScript, Chart.js.<br/><strong>Architecture:</strong> REST API + Single-page application.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay" style="display:none">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <p class="loading-text" id="loading-text">Training model…</p>
+    <p class="loading-sub">This may take a minute while the ordinal threshold ensemble is retrained</p>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="js/api.js?v=12"></script>
+<script src="js/charts.js?v=12"></script>
+<script src="js/ui.js?v=12"></script>
+<script src="js/app.js?v=12"></script>
+</body>
+</html>
