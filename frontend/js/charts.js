@@ -74,9 +74,9 @@ const Charts = (() => {
     },
     {
       label: 'XGBoost (Tuned)',
-      accuracy: 94.5,
+      accuracy: 95.92,
       cv_f1: 97.5,
-      f1_score: 94,
+      f1_score: 95.36,
     },
   ];
 

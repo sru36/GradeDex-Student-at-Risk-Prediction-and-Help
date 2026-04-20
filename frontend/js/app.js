@@ -9,13 +9,27 @@
   const sidebarToggle = document.getElementById('btn-sidebar-toggle');
   const sidebarBackdrop = document.getElementById('sidebar-backdrop');
   const mobileSidebarQuery = window.matchMedia('(max-width: 1024px)');
+  const desktopSidebarQuery = window.matchMedia('(min-width: 1025px)');
+
+  function syncSidebarToggleState() {
+    const isExpanded = desktopSidebarQuery.matches
+      ? !bodyEl.classList.contains('sidebar-collapsed')
+      : bodyEl.classList.contains('sidebar-open');
+    if (sidebarToggle) {
+      sidebarToggle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+    }
+  }
 
   function setSidebarOpen(open) {
     const shouldOpen = Boolean(open) && mobileSidebarQuery.matches;
     bodyEl.classList.toggle('sidebar-open', shouldOpen);
-    if (sidebarToggle) {
-      sidebarToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-    }
+    syncSidebarToggleState();
+  }
+
+  function setSidebarCollapsed(collapsed) {
+    const shouldCollapse = Boolean(collapsed) && desktopSidebarQuery.matches;
+    bodyEl.classList.toggle('sidebar-collapsed', shouldCollapse);
+    syncSidebarToggleState();
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -42,7 +56,11 @@
 
   if (sidebarToggle) {
     sidebarToggle.addEventListener('click', () => {
-      setSidebarOpen(!bodyEl.classList.contains('sidebar-open'));
+      if (desktopSidebarQuery.matches) {
+        setSidebarCollapsed(!bodyEl.classList.contains('sidebar-collapsed'));
+      } else {
+        setSidebarOpen(!bodyEl.classList.contains('sidebar-open'));
+      }
     });
   }
 
@@ -56,11 +74,21 @@
     }
   });
 
+  desktopSidebarQuery.addEventListener('change', event => {
+    if (!event.matches) {
+      setSidebarCollapsed(false);
+    }
+    syncSidebarToggleState();
+  });
+
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       setSidebarOpen(false);
+      setSidebarCollapsed(false);
     }
   });
+
+  syncSidebarToggleState();
 
   // ══════════════════════════════════════════════════════════════════════════
   //  STARTUP — check health & load model info
@@ -172,7 +200,10 @@
       const result = await Api.predictSingle(payload);
       UI.showPredictionResult(result);
       UI.renderSingleIntervention(payload, result);
-      UI.toast(`Predicted: ${result.predicted_grade} (${result.confidence}% confidence)`, 'success');
+      UI.toast(
+        `Predicted: ${result.predicted_grade} (${UI.formatConfidenceValue(result.confidence)}% confidence)`,
+        'success'
+      );
     } catch (err) {
       UI.toast(`Prediction failed: ${err.message}`, 'error');
     } finally {

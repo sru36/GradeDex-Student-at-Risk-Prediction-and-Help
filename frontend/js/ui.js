@@ -222,6 +222,16 @@ const UI = (() => {
     ];
   }
 
+  function clampConfidenceValue(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return 0;
+    return Math.min(numeric, 98);
+  }
+
+  function formatConfidenceValue(value) {
+    return clampConfidenceValue(value).toFixed(2).replace(/\.?0+$/, '');
+  }
+
   // ── Prediction result panel (8 grades) ───────────────────────────────────
   function showPredictionResult(data) {
     const panel = document.getElementById('predict-result');
@@ -250,7 +260,7 @@ const UI = (() => {
     if (descEl) descEl.textContent = DESC[grade] || '';
 
     document.getElementById('result-confidence-val').textContent =
-      `${data.confidence}%`;
+      `${formatConfidenceValue(data.confidence)}%`;
 
     const probs = data.probabilities || {};
     const ORDER = orderedGradeLabels(Object.keys(probs));
@@ -385,6 +395,7 @@ const UI = (() => {
     'Name', 'Student_Name', 'Student Name', 'Full_Name', 'Full Name', 'Student'
   ];
   const HIDDEN_BULK_COLUMNS = new Set(['Predicted_Score']);
+  const EMAIL_FIELD_CANDIDATES = ['Email', 'Email_Address', 'Email Address', 'Mail'];
 
   function normaliseFieldName(name) {
     return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -408,6 +419,50 @@ const UI = (() => {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  function buildBulkColumnMeta(keys) {
+    const normalisedNameCandidates = new Set(NAME_FIELD_CANDIDATES.map(normaliseFieldName));
+    const normalisedEmailCandidates = new Set(EMAIL_FIELD_CANDIDATES.map(normaliseFieldName));
+
+    const studentNameKey = keys.find(key => normalisedNameCandidates.has(normaliseFieldName(key))) || null;
+    const emailKey = keys.find(key => normalisedEmailCandidates.has(normaliseFieldName(key))) || null;
+
+    const stickyKeys = [];
+    if (studentNameKey) stickyKeys.push(studentNameKey);
+
+    return {
+      studentNameKey,
+      emailKey,
+      stickyKeys,
+      stickyOffsets: stickyKeys.reduce((acc, key, index) => {
+        acc[key] = index;
+        return acc;
+      }, {}),
+    };
+  }
+
+  function buildBulkColumnOrder(keys) {
+    const normalisedNameCandidates = new Set(NAME_FIELD_CANDIDATES.map(normaliseFieldName));
+    const studentNameKey = keys.find(key => normalisedNameCandidates.has(normaliseFieldName(key))) || null;
+    const preferredKeys = [studentNameKey, 'Predicted_Grade', 'Confidence_%'].filter(Boolean);
+    const seen = new Set();
+
+    return [
+      ...preferredKeys.filter(key => keys.includes(key) && !seen.has(key) && seen.add(key)),
+      ...keys.filter(key => !seen.has(key)),
+    ];
+  }
+
+  function getBulkCellClasses(key, columnMeta, type = 'cell') {
+    const classes = [`bulk-${type}`];
+    if (key === 'Predicted_Grade') classes.push('grade-cell');
+    if (columnMeta.studentNameKey === key) classes.push('bulk-name-cell');
+    if (columnMeta.emailKey === key) classes.push('bulk-email-cell');
+    if (Object.prototype.hasOwnProperty.call(columnMeta.stickyOffsets, key)) {
+      classes.push('sticky-col', `sticky-col-${columnMeta.stickyOffsets[key] + 1}`);
+    }
+    return classes.join(' ');
   }
 
   function pushUnique(items, value) {
@@ -840,19 +895,18 @@ const UI = (() => {
     card.style.display = 'block';
     title.textContent  = `Predictions — ${data.length} students`;
 
-    // Build header from keys (show Predicted_Grade + Confidence first)
+    // Keep sticky columns at the front so headers and cells stay aligned.
     const keys = Object.keys(data[0]).filter(key => !HIDDEN_BULK_COLUMNS.has(key));
-    const priorityKeys = ['Predicted_Grade', 'Confidence_%'];
-    const orderedKeys  = [
-      ...priorityKeys.filter(k => keys.includes(k)),
-      ...keys.filter(k => !priorityKeys.includes(k)),
-    ];
+    const orderedKeys = buildBulkColumnOrder(keys);
+    const columnMeta = buildBulkColumnMeta(orderedKeys);
 
     const thead = document.getElementById('bulk-table-head');
-    thead.innerHTML = `<tr>${orderedKeys.map(k => `<th>${k.replace(/_/g, ' ')}</th>`).join('')}</tr>`;
+    thead.innerHTML = `<tr>${orderedKeys.map(k => `
+      <th class="${getBulkCellClasses(k, columnMeta, 'head')}">${escapeHtml(k.replace(/_/g, ' '))}</th>
+    `).join('')}</tr>`;
 
-    _renderBulkPage(orderedKeys);
-    _renderPagination(orderedKeys);
+    _renderBulkPage(orderedKeys, columnMeta);
+    _renderPagination(orderedKeys, columnMeta);
 
     // Store for download
     card.dataset.keys = JSON.stringify(orderedKeys);
@@ -860,7 +914,7 @@ const UI = (() => {
     refreshHorizontalScrollers();
   }
 
-  function _renderBulkPage(keys) {
+  function _renderBulkPage(keys, columnMeta) {
     const tbody = document.getElementById('bulk-table-body');
     const start = (_currentPage - 1) * PAGE_SIZE;
     const slice = _bulkData.slice(start, start + PAGE_SIZE);
@@ -868,16 +922,22 @@ const UI = (() => {
     tbody.innerHTML = slice.map(row => {
       const isRiskRow = String(row.Predicted_Grade || '').trim().toUpperCase() === 'F';
       return `<tr class="${isRiskRow ? 'risk-row' : ''}">${keys.map(k => {
-        const val = row[k] ?? '';
-        const cls = k === 'Predicted_Grade' ? 'grade-cell' : '';
-        const style = k === 'Predicted_Grade'
-          ? ` style="color:${gradeColor(val)};font-weight:700"` : '';
-        return `<td class="${cls}"${style}>${val}</td>`;
+        let val = row[k] ?? '';
+        if (k === 'Confidence_%') val = formatConfidenceValue(val);
+        const classes = getBulkCellClasses(k, columnMeta);
+        const styles = [];
+        if (k === 'Predicted_Grade') styles.push(`color:${gradeColor(val)}`, 'font-weight:700');
+        const title = (columnMeta.emailKey === k || columnMeta.studentNameKey === k) && val
+          ? ` title="${escapeHtml(val)}"`
+          : '';
+        return `<td class="${classes}"${styles.length ? ` style="${styles.join(';')}"` : ''}${title}>
+          <span class="cell-text">${escapeHtml(val)}</span>
+        </td>`;
       }).join('')}</tr>`;
     }).join('');
   }
 
-  function _renderPagination(keys) {
+  function _renderPagination(keys, columnMeta) {
     const total = Math.ceil(_bulkData.length / PAGE_SIZE);
     const container = document.getElementById('bulk-pagination');
     if (total <= 1) { container.innerHTML = ''; return; }
@@ -890,8 +950,8 @@ const UI = (() => {
     container.querySelectorAll('.page-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         _currentPage = +btn.dataset.page;
-        _renderBulkPage(keys);
-        _renderPagination(keys);
+        _renderBulkPage(keys, columnMeta);
+        _renderPagination(keys, columnMeta);
       });
     });
   }
@@ -925,6 +985,7 @@ const UI = (() => {
     renderInterventionReports,
     clearInterventionReports,
     downloadBlob,
+    formatConfidenceValue,
     gradeColor,
     get bulkData() { return _bulkData; },
   };

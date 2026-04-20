@@ -53,6 +53,7 @@ TAIL_SCORE_CENTERS = np.array([57.0, 62.0, 67.0, 72.0, 77.0, 82.0, 87.0, 92.5], 
 TAIL_SCORE_SIGMA = 2.0
 DYNAMIC_GRADE_PERCENTILES = np.array([30, 40, 50, 60, 70, 80, 90], dtype=float)
 DYNAMIC_GRADE_CENTER_PERCENTILES = np.array([15, 35, 45, 55, 65, 75, 85, 95], dtype=float)
+MAX_DISPLAY_CONFIDENCE = 98.0
 
 LOGISTIC_CONFIG = {
     "C": 2.0,
@@ -115,6 +116,10 @@ def _calc_metrics(y_true, y_pred) -> dict:
             float(f1_score(y_true, y_pred, average="macro", zero_division=0)) * 100, 2
         ),
     }
+
+
+def _cap_confidence_percentage(probability: float) -> float:
+    return round(min(float(probability) * 100, MAX_DISPLAY_CONFIDENCE), 2)
 
 
 def _clean_training_frame(df: pd.DataFrame) -> pd.DataFrame:
@@ -684,7 +689,7 @@ def predict_single(model_info: dict, input_df: pd.DataFrame) -> dict:
     return {
         "predicted_grade": model_info["label_reverse"][cls],
         "predicted_score": round(float(raw_scores[0]), 2),
-        "confidence": round(probs[cls] * 100, 2),
+        "confidence": _cap_confidence_percentage(probs[cls]),
         "probabilities": {
             model_info["grade_labels"][i]: round(p * 100, 2) for i, p in enumerate(probs)
         },
@@ -713,7 +718,7 @@ def predict_batch(model_info: dict, df: pd.DataFrame) -> pd.DataFrame:
     out["Predicted_Score"] = [round(float(score), 2) for score in raw_scores]
     out["Predicted_Grade"] = [model_info["label_reverse"][int(pred)] for pred in grade_pred]
     out["Confidence_%"] = [
-        round(float(grade_probs[row_index][int(pred)]) * 100, 2)
+        _cap_confidence_percentage(grade_probs[row_index][int(pred)])
         for row_index, pred in enumerate(grade_pred)
     ]
     return out

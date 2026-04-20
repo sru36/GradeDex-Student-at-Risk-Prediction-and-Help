@@ -14,7 +14,7 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-  <link rel="stylesheet" href="css/style.css?v=28" />
+  <link rel="stylesheet" href="css/style.css?v=33" />
 </head>
 <body>
 
@@ -431,7 +431,7 @@
       </div>
 
       <!-- Results -->
-      <div class="card" id="bulk-results" style="display:none">
+      <div class="card results-card" id="bulk-results" style="display:none">
         <div class="card-header">
           <h3 id="bulk-result-title">Predictions</h3>
           <button class="btn btn-success btn-sm" id="btn-download">
@@ -439,7 +439,7 @@
             Download CSV
           </button>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap table-responsive" aria-label="Bulk prediction results">
           <table class="results-table" id="bulk-table">
             <thead id="bulk-table-head"></thead>
             <tbody id="bulk-table-body"></tbody>
@@ -508,12 +508,16 @@
         </div>
         <div class="developer-grid">
           <div class="card developer-card">
-            <div class="developer-avatar developer-avatar-sr">SR</div>
+            <div class="developer-avatar developer-avatar-photo">
+              <img src="assets/srushti-rawal.jpg" alt="Srushti Rawal" />
+            </div>
             <h3>Srushti Rawal</h3>
             <span class="developer-role">Developer</span>
           </div>
           <div class="card developer-card">
-            <div class="developer-avatar developer-avatar-ms">MS</div>
+            <div class="developer-avatar developer-avatar-photo">
+              <img src="assets/mayank-saini.jpg" alt="Mayank Saini" />
+            </div>
             <h3>Mayank Saini</h3>
             <span class="developer-role">Developer</span>
           </div>
@@ -536,8 +540,8 @@
 <!-- Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="js/api.js?v=26"></script>
-<script src="js/charts.js?v=26"></script>
-<script src="js/ui.js?v=26"></script>
-<script src="js/app.js?v=27"></script>
+<script src="js/charts.js?v=27"></script>
+<script src="js/ui.js?v=29"></script>
+<script src="js/app.js?v=29"></script>
 </body>
 </html>
