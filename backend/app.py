@@ -71,7 +71,7 @@ async def lifespan(application: "FastAPI"):
 # ── App setup ─────────────────────────────────────────────────────────────────
 app = FastAPI(
     title="GradeDex API",
-    description="Student Performance Prediction — ordinal threshold ensemble",
+    description="ML-based Student at Risk Prediction & Help — ordinal threshold ensemble",
     version="1.0.0",
     lifespan=lifespan,
 )

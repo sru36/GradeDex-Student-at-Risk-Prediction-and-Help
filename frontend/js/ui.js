@@ -4,6 +4,12 @@
 
 const UI = (() => {
 
+  function formatModelName(name) {
+    if (!name) return '—';
+    if (name === 'Ordinal Hybrid') return 'XGboost TUNED';
+    return name;
+  }
+
   // ── Toast notifications ────────────────────────────────────────────────────
   function toast(message, type = 'info', duration = 4000) {
     const container = document.getElementById('toast-container');
@@ -132,7 +138,7 @@ const UI = (() => {
     const acc = info.accuracy != null ? `${info.accuracy}%` : '—';
     const f1  = info.f1_score  != null ? `${info.f1_score}%`  : '—';
     const tot = info.total_samples != null ? info.total_samples.toLocaleString() : '—';
-    const bestModel = info.best_model || '—';
+    const bestModel = formatModelName(info.best_model);
 
     animateValue('stat-accuracy', acc);
     animateValue('stat-total',    tot);
@@ -378,9 +384,6 @@ const UI = (() => {
   const NAME_FIELD_CANDIDATES = [
     'Name', 'Student_Name', 'Student Name', 'Full_Name', 'Full Name', 'Student'
   ];
-  const EMAIL_FIELD_CANDIDATES = [
-    'Email', 'E-mail', 'Email_Address', 'Email Address', 'Student_Email', 'Student Email'
-  ];
   const HIDDEN_BULK_COLUMNS = new Set(['Predicted_Score']);
 
   function normaliseFieldName(name) {
@@ -525,30 +528,6 @@ const UI = (() => {
     }).filter(Boolean);
   }
 
-  function buildEmailSubject() {
-    return 'Your Grade Analysis';
-  }
-
-  function buildEmailBody(report) {
-    const greeting = report.name && report.name !== 'Current Student'
-      ? `Dear ${report.name},`
-      : 'Dear Student,';
-    const suggestions = report.suggestions.slice(0, 3).map((item, index) => `${index + 1}. ${item}`);
-
-    return [
-      greeting,
-      '',
-      'I am worried about your result as your performance has been fluctuating this semester. I am attaching a report for the same.',
-      '',
-      'You can implement these to improve your grades:',
-      ...suggestions,
-    ].join('\n');
-  }
-
-  function isUsableEmail(value) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
-  }
-
   function hexToRgb(hex) {
     const normalized = String(hex || '').replace('#', '').trim();
     if (normalized.length !== 6) return [99, 102, 241];
@@ -567,7 +546,6 @@ const UI = (() => {
 
   function createInterventionReport(row, index, overrides = {}) {
     const name = String(overrides.name || findFieldValue(row, NAME_FIELD_CANDIDATES) || `Student ${index + 1}`).trim();
-    const email = String(overrides.email || findFieldValue(row, EMAIL_FIELD_CANDIDATES) || 'Not provided in upload').trim();
     const grade = String(row.Predicted_Grade || '').trim() || 'F';
     const predictedScore = row.Predicted_Score !== undefined && row.Predicted_Score !== ''
       ? row.Predicted_Score
@@ -576,7 +554,6 @@ const UI = (() => {
     const report = {
       index,
       name,
-      email,
       grade,
       predictedScore,
       riskStatus: 'At Risk',
@@ -584,34 +561,10 @@ const UI = (() => {
       suggestions: analysis.suggestions,
       summary: analysis.summary,
       metrics: buildStatMetrics(row),
-      subject: buildEmailSubject(),
       sourceRow: row,
     };
 
-    report.emailBody = buildEmailBody(report);
     return report;
-  }
-
-  function buildMailtoUrl(report) {
-    const recipient = isUsableEmail(report.email) ? report.email.trim() : '';
-    const subject = String(report.subject || '').trim();
-    const body = String(report.emailBody || '').replace(/\r?\n/g, '\r\n');
-    return `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  }
-
-  function openInterventionEmail(report) {
-    const recipient = isUsableEmail(report.email) ? report.email.trim() : '';
-    if (!recipient) {
-      toast('Student email is not available. The mail app will open and you can add the recipient manually.', 'warning', 5000);
-    }
-
-    const mailto = buildMailtoUrl(report);
-    const link = document.createElement('a');
-    link.href = mailto;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    requestAnimationFrame(() => link.remove());
   }
 
   function downloadInterventionPdf(report) {
@@ -685,7 +638,7 @@ const UI = (() => {
 
     addSectionTitle('Student Information');
     addParagraph(`Name: ${report.name}`, { fontStyle: 'bold', color: [30, 41, 59] });
-    addParagraph(`Email: ${report.email}`, { color: [71, 85, 105], after: 10 });
+    addParagraph(`Report generated from GradeDex intervention analysis.`, { color: [71, 85, 105], after: 10 });
 
     addSectionTitle('Statistical Snapshot');
     const chartHeight = 56 + (metrics.length * 28);
@@ -728,10 +681,6 @@ const UI = (() => {
 
     addSectionTitle('Summary');
     addParagraph(report.summary, { color: [51, 65, 85] });
-    addParagraph('Email content is intentionally excluded from this report. Use the Open Email action in the app to compose the message separately.', {
-      fontSize: 9.5,
-      color: [100, 116, 139],
-    });
 
     doc.save(`${safeFileName(report.name, `student_${report.index + 1}`)}_intervention_report.pdf`);
   }
@@ -741,15 +690,8 @@ const UI = (() => {
     const card = document.getElementById('single-intervention');
     const content = document.getElementById('single-intervention-content');
     const name = document.getElementById('single-risk-name');
-    const email = document.getElementById('single-risk-email');
-    const emailButton = document.getElementById('single-open-email');
     if (content) content.innerHTML = '';
     if (name) name.textContent = 'Current Student';
-    if (email) email.textContent = 'Not provided';
-    if (emailButton) {
-      emailButton.href = '#';
-      emailButton.title = '';
-    }
     if (card) card.style.display = 'none';
   }
 
@@ -757,10 +699,8 @@ const UI = (() => {
     const card = document.getElementById('single-intervention');
     const content = document.getElementById('single-intervention-content');
     const name = document.getElementById('single-risk-name');
-    const email = document.getElementById('single-risk-email');
     const downloadButton = document.getElementById('single-download-report');
-    const emailButton = document.getElementById('single-open-email');
-    if (!card || !content || !downloadButton || !emailButton) return;
+    if (!card || !content || !downloadButton) return;
 
     const grade = String(prediction?.predicted_grade || '').trim().toUpperCase();
     if (grade !== 'F') {
@@ -775,11 +715,9 @@ const UI = (() => {
     };
     _singleInterventionReport = createInterventionReport(row, 0, {
       name: 'Current Student',
-      email: 'Not provided in form',
     });
 
     if (name) name.textContent = _singleInterventionReport.name;
-    if (email) email.textContent = _singleInterventionReport.email;
 
     content.innerHTML = `
       <div class="intervention-grid">
@@ -802,23 +740,13 @@ const UI = (() => {
           <p>${escapeHtml(_singleInterventionReport.summary)}</p>
         </section>
         <section class="intervention-block">
-          <h4>Communication</h4>
-          <p><strong>Recipient:</strong> ${escapeHtml(_singleInterventionReport.email)}</p>
-          <p><strong>Subject:</strong> ${escapeHtml(_singleInterventionReport.subject)}</p>
-          <p>Download the PDF report first, then use Open Email to launch your mail app.</p>
+          <h4>Report</h4>
+          <p>Download the intervention report to keep a copy of this student's risk summary and recommended actions.</p>
         </section>
       </div>
     `;
 
     downloadButton.onclick = () => downloadInterventionPdf(_singleInterventionReport);
-    emailButton.href = buildMailtoUrl(_singleInterventionReport);
-    emailButton.onclick = event => {
-      event.preventDefault();
-      openInterventionEmail(_singleInterventionReport);
-    };
-    emailButton.title = isUsableEmail(_singleInterventionReport.email)
-      ? ''
-      : 'Student email is not available. The mail app will open and you can add the recipient manually.';
 
     card.style.display = 'block';
     refreshHorizontalScrollers();
@@ -856,7 +784,6 @@ const UI = (() => {
         <div class="intervention-head">
           <div class="intervention-title-group">
             <span class="intervention-name">${escapeHtml(report.name)}</span>
-            <span class="intervention-email">${escapeHtml(report.email)}</span>
           </div>
           <span class="badge badge-low">${escapeHtml(report.riskStatus)}</span>
         </div>
@@ -881,16 +808,13 @@ const UI = (() => {
               <p>${escapeHtml(report.summary)}</p>
             </section>
             <section class="intervention-block">
-              <h4>Communication</h4>
-              <p><strong>Recipient:</strong> ${escapeHtml(report.email)}</p>
-              <p><strong>Subject:</strong> ${escapeHtml(report.subject)}</p>
-              <p>Download the PDF report first, then use Open Email to launch your mail app.</p>
+              <h4>Report</h4>
+              <p>Download the intervention report to keep a copy of this student's risk summary and recommended actions.</p>
             </section>
           </div>
         </div>
         <div class="intervention-actions">
-          <button class="btn btn-ghost btn-sm" type="button" data-report-index="${index}">Download PDF</button>
-          <a class="btn btn-primary btn-sm" data-email-index="${index}" href="${escapeHtml(buildMailtoUrl(report))}" title="${escapeHtml(isUsableEmail(report.email) ? '' : 'Student email is not available. The mail app will open and you can add the recipient manually.')}">Open Email</a>
+          <button class="btn btn-primary btn-sm" type="button" data-report-index="${index}">Download Report</button>
         </div>
       </article>
     `).join('');
@@ -899,14 +823,6 @@ const UI = (() => {
       button.addEventListener('click', () => {
         const report = _interventionReports[Number(button.dataset.reportIndex)];
         if (report) downloadInterventionPdf(report);
-      });
-    });
-
-    list.querySelectorAll('[data-email-index]').forEach(button => {
-      button.addEventListener('click', event => {
-        event.preventDefault();
-        const report = _interventionReports[Number(button.dataset.emailIndex)];
-        if (report) openInterventionEmail(report);
       });
     });
 

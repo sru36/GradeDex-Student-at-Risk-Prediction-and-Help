@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="GradeDex — student academic performance prediction using an ordinal threshold ensemble. Predict grades, upload CSVs, and inspect model behavior." />
-  <title>GradeDex — Student Performance Predictor</title>
+  <meta name="description" content="GradeDex - ML-based Student at Risk Prediction &amp; Help with early alerts, grade forecasting, and intervention support." />
+  <title>GradeDex - Student at Risk Prediction &amp; Help</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -14,7 +14,7 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-  <link rel="stylesheet" href="css/style.css?v=12" />
+  <link rel="stylesheet" href="css/style.css?v=28" />
 </head>
 <body>
 
@@ -28,6 +28,11 @@
   <div class="cloud cloud-4"></div>
   <div class="cloud cloud-5"></div>
 </div>
+  <button class="sidebar-toggle" id="btn-sidebar-toggle" type="button" aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="false">
+    <span class="sidebar-toggle-bar"></span>
+    <span class="sidebar-toggle-bar"></span>
+    <span class="sidebar-toggle-bar"></span>
+  </button>
 
   <!-- ── SIDEBAR ─────────────────────────────────────────────── -->
   <aside class="sidebar" id="sidebar">
@@ -59,12 +64,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         </span>
         <span class="nav-label">Bulk Upload</span>
-      </a>
-      <a href="#" class="nav-item" data-section="model" id="nav-model">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        </span>
-        <span class="nav-label">Model Insights</span>
       </a>
       <a href="#" class="nav-item" data-section="about" id="nav-about">
         <span class="nav-icon">
@@ -107,6 +106,7 @@
       <span class="status-text" id="status-text">Checking model…</span>
     </div>
   </aside>
+  <div class="sidebar-backdrop" id="sidebar-backdrop" aria-hidden="true"></div>
 
   <!-- ── MAIN CONTENT ──────────────────────────────────────────── -->
   <main class="main-content">
@@ -118,19 +118,24 @@
          SECTION 1: DASHBOARD
     ═══════════════════════════════════════════════════════════ -->
     <section class="content-section active" id="section-dashboard">
-      <div class="section-header">
-        <div>
-          <h1 class="section-title">Dashboard</h1>
-          <p class="section-sub">Ordinal-threshold student grade prediction system</p>
+      <div class="dashboard-shell">
+        <div class="dashboard-hero card">
+          <div class="dashboard-cloud dashboard-cloud-1" aria-hidden="true"></div>
+          <div class="dashboard-cloud dashboard-cloud-2" aria-hidden="true"></div>
+          <div class="dashboard-cloud dashboard-cloud-3" aria-hidden="true"></div>
+          <div class="dashboard-hero-content">
+            <span class="badge badge-primary dashboard-badge">ML-Powered Predictions</span>
+            <div class="dashboard-brand">GradeDex</div>
+            <p class="dashboard-subtitle">Student at Risk Prediction &amp; Help</p>
+            <p class="dashboard-copy">Leverage advanced machine learning to identify at-risk students early and support timely interventions with clarity and precision.</p>
+            <div class="dashboard-actions">
+              <button class="btn btn-primary dashboard-cta" id="btn-dashboard-start" type="button">Start Predicting</button>
+            </div>
+          </div>
         </div>
-        <button class="btn btn-primary" id="btn-train">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M5 3l14 9-14 9V3z"/></svg>
-          Train Model
-        </button>
-      </div>
 
       <!-- Stats Row -->
-      <div class="stats-grid">
+      <div class="stats-grid dashboard-stats">
         <div class="stat-card">
           <div class="stat-icon icon-blue">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -170,23 +175,23 @@
       </div>
 
       <!-- Charts Row -->
-      <div class="charts-row">
-        <div class="card chart-card">
+      <div class="charts-row dashboard-charts">
+        <div class="card chart-card dashboard-chart-card dashboard-chart-card-distribution">
           <div class="card-header">
             <h3>Class Distribution</h3>
             <span class="badge badge-smote" id="smote-badge" style="display:none">SMOTE Applied</span>
           </div>
-          <div class="chart-wrap-sm">
+          <div class="chart-wrap-sm dashboard-chart-wrap-sm">
             <canvas id="chart-distribution"></canvas>
           </div>
           <div class="smote-info" id="smote-info" style="display:none"></div>
         </div>
-        <div class="card chart-card chart-card-wide">
+        <div class="card chart-card chart-card-wide dashboard-chart-card dashboard-comparison-card">
           <div class="card-header">
             <h3>Model Comparison</h3>
             <span class="chart-legend-hint">Accuracy & F1-Score (%)</span>
           </div>
-          <div class="chart-wrap">
+          <div class="chart-wrap dashboard-chart-wrap">
             <canvas id="chart-comparison"></canvas>
           </div>
         </div>
@@ -196,6 +201,7 @@
       <div class="hint-banner" id="hint-banner">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         No model loaded. Click <strong>Train Model</strong> to begin (may take several minutes).
+      </div>
       </div>
     </section>
 
@@ -374,14 +380,12 @@
             <div class="intervention-head">
               <div class="intervention-title-group">
                 <span class="intervention-name" id="single-risk-name">Current Student</span>
-                <span class="intervention-email" id="single-risk-email">Not provided</span>
               </div>
               <span class="badge badge-low">At Risk</span>
             </div>
             <div class="intervention-scroll" id="single-intervention-content"></div>
             <div class="intervention-actions">
-              <button class="btn btn-ghost btn-sm" id="single-download-report" type="button">Download PDF</button>
-              <a class="btn btn-primary btn-sm" id="single-open-email" href="#">Open Email</a>
+              <button class="btn btn-primary btn-sm" id="single-download-report" type="button">Download Report</button>
             </div>
           </div>
         </div>
@@ -454,107 +458,13 @@
     </section>
 
     <!-- ═══════════════════════════════════════════════════════════
-         SECTION 4: MODEL INSIGHTS
+         SECTION 4: ABOUT
     ═══════════════════════════════════════════════════════════ -->
-    <section class="content-section" id="section-model">
-      <div class="section-header">
-        <div>
-          <h1 class="section-title">Model Insights</h1>
-          <p class="section-sub">Performance metrics, feature importance, and training details</p>
-        </div>
-      </div>
-
-      <!-- Metrics table -->
-      <div class="card">
-        <div class="card-header">
-          <h3>Model Comparison</h3>
-          <span class="badge badge-primary">5-fold CV</span>
-        </div>
-        <div class="table-wrap">
-          <table class="results-table" id="metrics-table">
-            <thead>
-              <tr>
-                <th>Model</th>
-                <th>Accuracy</th>
-                <th>Precision</th>
-                <th>Recall</th>
-                <th>F1-Score</th>
-                <th>CV F1 (mean)</th>
-              </tr>
-            </thead>
-            <tbody id="metrics-table-body">
-              <tr><td colspan="6" class="empty-state">Train the model first</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Feature importance + params -->
-      <div class="charts-row">
-        <div class="card chart-card chart-card-wide">
-          <div class="card-header">
-            <h3>Feature Influence</h3>
-            <span class="chart-legend-hint">Top 10 weighted signals</span>
-          </div>
-          <div class="chart-wrap">
-            <canvas id="chart-importance"></canvas>
-          </div>
-        </div>
-        <div class="card model-params-card">
-          <div class="card-header"><h3>Model Configuration</h3></div>
-          <div id="params-list" class="params-list">
-            <p class="empty-state">Train first</p>
-          </div>
-          <div class="card-header" style="margin-top:1.5rem"><h3>Class Balancing</h3></div>
-          <div id="smote-detail-list" class="params-list" style="max-height:280px;overflow-y:auto">
-            <p class="empty-state">Train first</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Confusion Matrix -->
-      <div class="charts-row" style="margin-top:24px">
-        <div class="card chart-card chart-card-wide">
-          <div class="card-header">
-            <h3>Confusion Matrix</h3>
-            <div style="display:flex;gap:12px;align-items:center;font-size:11px;color:var(--text-muted)">
-              <span style="color:#6366f1">■</span> Correct (diagonal)
-              <span style="color:#ef4444">■</span> Errors
-            </div>
-          </div>
-          <div style="overflow-x:auto">
-            <canvas id="chart-confusion" style="display:block"></canvas>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <h3>Classification Report</h3>
-            <span class="badge badge-primary">Per-class metrics</span>
-          </div>
-          <div class="table-wrap">
-            <table class="results-table">
-              <thead>
-                <tr>
-                  <th>Grade</th><th>Precision</th><th>Recall</th><th>F1-Score</th><th>Support</th>
-                </tr>
-              </thead>
-              <tbody id="clf-report-body">
-                <tr><td colspan="5" class="empty-state">Train the model first</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         SECTION 5: ABOUT
-    ═══════════════════════════════════════════════════════════ -->
-    <section class="content-section" id="section-about">
+<section class="content-section" id="section-about">
       <div class="section-header">
         <div>
           <h1 class="section-title">About GradeDex</h1>
-          <p class="section-sub">Academic project — ML-based student performance prediction</p>
+          <p class="section-sub">Academic project — ML-based Student at Risk Prediction &amp; Help</p>
         </div>
       </div>
 
@@ -562,12 +472,12 @@
         <div class="card about-card">
           <div class="about-icon">🎓</div>
           <h3>Project Overview</h3>
-          <p>GradeDex is an end-to-end machine learning web application that predicts student academic performance using real-world structured data. It is inspired by the research paper <em>"Predicting Student Performance Using Deep Learning and Machine Learning Techniques"</em>, adapted to use only Machine Learning models.</p>
+          <p>GradeDex is an end-to-end machine learning web application for <strong>Student at Risk Prediction &amp; Help</strong>. It turns structured student data into early risk signals, grade forecasts, and support-ready outputs that help educators act sooner.</p>
         </div>
         <div class="card about-card">
           <div class="about-icon">🤖</div>
-          <h3>Primary Model: Ordinal Logistic</h3>
-          <p>The production model trains <strong>7 logistic regressions</strong> for the thresholds <code>score ≥ 60, 65, 70, 75, 80, 85, 90</code>. Their cumulative probabilities are converted into the fixed grade bands <strong>F, D, C, B, B+, A, AA, AAA</strong>, which aligns the model directly with the grading rubric.</p>
+          <h3>Prediction Engine</h3>
+          <p>The model pipeline learns ordered score boundaries and converts them into the fixed grade bands <strong>F, D, C, B, B+, A, AA, AAA</strong>. This keeps the prediction flow aligned with the grading rubric while also helping identify students drifting toward academic risk.</p>
         </div>
         <div class="card about-card">
           <div class="about-icon">🩺</div>
@@ -576,8 +486,8 @@
         </div>
         <div class="card about-card">
           <div class="about-icon">⚖️</div>
-          <h3>Why This Model Wins</h3>
-          <p>The grade labels are ordered buckets of <code>Exam_Score</code>, so the model predicts each score boundary directly instead of treating grades as unrelated classes. That reduces boundary mistakes and improved held-out accuracy from the old multiclass XGBoost baseline to above <strong>95%</strong>.</p>
+          <h3>Why This Helps</h3>
+          <p>GradeDex is built for action, not just reporting. It supports single-student prediction, bulk analysis, and intervention-oriented workflows so teachers can focus attention where support is most needed.</p>
         </div>
         <div class="card about-card">
           <div class="about-icon">📊</div>
@@ -587,7 +497,26 @@
         <div class="card about-card">
           <div class="about-icon">🛠️</div>
           <h3>Tech Stack</h3>
-          <p><strong>Backend:</strong> Python, FastAPI, scikit-learn, XGBoost (baseline comparison), pandas, numpy, joblib.<br/><strong>Frontend:</strong> Vanilla HTML/CSS/JavaScript, Chart.js.<br/><strong>Architecture:</strong> REST API + Single-page application.</p>
+          <p><strong>Backend:</strong> Python, FastAPI, scikit-learn, pandas, numpy, joblib.<br/><strong>Frontend:</strong> Vanilla HTML/CSS/JavaScript, Chart.js.<br/><strong>Architecture:</strong> REST API + single-page application focused on prediction, risk surfacing, and student help flows.</p>
+        </div>
+      </div>
+
+      <div class="about-developers">
+        <div class="about-developers-header">
+          <h2>About the Developers</h2>
+          <p>Built as a collaborative academic project with equal focus on machine learning, frontend usability, and support-driven student analytics.</p>
+        </div>
+        <div class="developer-grid">
+          <div class="card developer-card">
+            <div class="developer-avatar developer-avatar-sr">SR</div>
+            <h3>Srushti Rawal</h3>
+            <span class="developer-role">Developer</span>
+          </div>
+          <div class="card developer-card">
+            <div class="developer-avatar developer-avatar-ms">MS</div>
+            <h3>Mayank Saini</h3>
+            <span class="developer-role">Developer</span>
+          </div>
         </div>
       </div>
     </section>
@@ -606,9 +535,9 @@
 
 <!-- Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="js/api.js?v=12"></script>
-<script src="js/charts.js?v=12"></script>
-<script src="js/ui.js?v=12"></script>
-<script src="js/app.js?v=12"></script>
+<script src="js/api.js?v=26"></script>
+<script src="js/charts.js?v=26"></script>
+<script src="js/ui.js?v=26"></script>
+<script src="js/app.js?v=27"></script>
 </body>
 </html>

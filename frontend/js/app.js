@@ -5,6 +5,19 @@
 
 (async () => {
 
+  const bodyEl = document.body;
+  const sidebarToggle = document.getElementById('btn-sidebar-toggle');
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+  const mobileSidebarQuery = window.matchMedia('(max-width: 1024px)');
+
+  function setSidebarOpen(open) {
+    const shouldOpen = Boolean(open) && mobileSidebarQuery.matches;
+    bodyEl.classList.toggle('sidebar-open', shouldOpen);
+    if (sidebarToggle) {
+      sidebarToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+    }
+  }
+
   // ══════════════════════════════════════════════════════════════════════════
   //  TAB NAVIGATION
   // ══════════════════════════════════════════════════════════════════════════
@@ -21,7 +34,32 @@
     item.addEventListener('click', e => {
       e.preventDefault();
       switchSection(item.dataset.section);
+      if (mobileSidebarQuery.matches) {
+        setSidebarOpen(false);
+      }
     });
+  });
+
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', () => {
+      setSidebarOpen(!bodyEl.classList.contains('sidebar-open'));
+    });
+  }
+
+  if (sidebarBackdrop) {
+    sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
+  }
+
+  mobileSidebarQuery.addEventListener('change', event => {
+    if (!event.matches) {
+      setSidebarOpen(false);
+    }
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      setSidebarOpen(false);
+    }
   });
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -44,11 +82,9 @@
 
   async function loadModelDashboard() {
     try {
-      const [info, metricsData, fiData, cmData] = await Promise.all([
+      const [info, metricsData] = await Promise.all([
         Api.modelInfo(),
         Api.metrics(),
-        Api.featureImportance(),
-        Api.confusionMatrix(),
       ]);
 
       // ── Status bar ─────────────────────────────────────────────────────
@@ -60,34 +96,16 @@
       // ── Class distribution chart ───────────────────────────────────────
       if (info.class_distribution) {
         Charts.renderDistributionChart(info.class_distribution);
+        const distributionCanvas = document.getElementById('chart-distribution');
+        if (distributionCanvas) distributionCanvas._dashboardData = info.class_distribution;
         UI.renderSmoteInfo(info.smote_details);
       }
 
       // ── Model comparison chart ─────────────────────────────────────────
       if (metricsData.all_metrics) {
         Charts.renderComparisonChart(metricsData.all_metrics);
-      }
-
-      // ── Model Insights tab ─────────────────────────────────────────────
-      if (metricsData.all_metrics) {
-        UI.renderMetricsTable(metricsData.all_metrics);
-      }
-      if (fiData.feature_importance) {
-        Charts.renderImportanceChart(fiData.feature_importance);
-      }
-      UI.renderParams(info.best_params, info.smote_details);
-
-      // ── Confusion matrix + classification report ───────────────────────
-      if (cmData.matrix && cmData.labels) {
-        setTimeout(() => {
-          Charts.renderConfusionMatrix(cmData.matrix, cmData.labels);
-          // Store for theme-toggle redraw
-          const cmCanvas = document.getElementById('chart-confusion');
-          if (cmCanvas) cmCanvas._cmData = { matrix: cmData.matrix, labels: cmData.labels };
-        }, 200);
-      }
-      if (cmData.classification_report) {
-        UI.renderClassificationReport(cmData.classification_report);
+        const comparisonCanvas = document.getElementById('chart-comparison');
+        if (comparisonCanvas) comparisonCanvas._dashboardData = metricsData.all_metrics;
       }
 
     } catch (err) {
@@ -98,26 +116,29 @@
   // ══════════════════════════════════════════════════════════════════════════
   //  TRAIN MODEL
   // ══════════════════════════════════════════════════════════════════════════
-  document.getElementById('btn-train').addEventListener('click', async () => {
-    const confirmed = confirm(
-      'Train the model now?\n\nThis retrains the ordinal threshold ensemble and updates the saved model.\nThe UI will show a loading screen while training runs.'
-    );
-    if (!confirmed) return;
+  const trainButton = document.getElementById('btn-train');
+  if (trainButton) {
+    trainButton.addEventListener('click', async () => {
+      const confirmed = confirm(
+        'Train the model now?\n\nThis retrains the ordinal threshold ensemble and updates the saved model.\nThe UI will show a loading screen while training runs.'
+      );
+      if (!confirmed) return;
 
-    UI.showLoading('Training ordinal threshold ensemble…');
-    UI.setStatus('loading', 'Training…');
+      UI.showLoading('Training ordinal threshold ensemble…');
+      UI.setStatus('loading', 'Training…');
 
-    try {
-      const result = await Api.trainModel();
-      UI.hideLoading();
-      UI.toast(`✅ Model trained! Accuracy: ${result.accuracy}%`, 'success', 6000);
-      await loadModelDashboard();
-    } catch (err) {
-      UI.hideLoading();
-      UI.setStatus('error', 'Training failed');
-      UI.toast(`Training failed: ${err.message}`, 'error', 8000);
-    }
-  });
+      try {
+        const result = await Api.trainModel();
+        UI.hideLoading();
+        UI.toast(`✅ Model trained! Accuracy: ${result.accuracy}%`, 'success', 6000);
+        await loadModelDashboard();
+      } catch (err) {
+        UI.hideLoading();
+        UI.setStatus('error', 'Training failed');
+        UI.toast(`Training failed: ${err.message}`, 'error', 8000);
+      }
+    });
+  }
 
   // ══════════════════════════════════════════════════════════════════════════
   //  MANUAL PREDICTION FORM
@@ -311,12 +332,17 @@
   btnTheme.addEventListener('click', () => {
     const current = htmlEl.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
     applyTheme(current === 'light' ? 'dark' : 'light');
-    // Redraw confusion matrix — canvas needs size recalc after colour shift
-    if (typeof Charts !== 'undefined' && Charts.renderConfusionMatrix) {
+    // Redraw charts after the palette flips.
+    if (typeof Charts !== 'undefined') {
       setTimeout(() => {
-        const cmCanvas = document.getElementById('chart-confusion');
-        if (cmCanvas && cmCanvas._cmData) {
-          Charts.renderConfusionMatrix(cmCanvas._cmData.matrix, cmCanvas._cmData.labels);
+        const distributionCanvas = document.getElementById('chart-distribution');
+        if (distributionCanvas && distributionCanvas._dashboardData) {
+          Charts.renderDistributionChart(distributionCanvas._dashboardData);
+        }
+
+        const comparisonCanvas = document.getElementById('chart-comparison');
+        if (comparisonCanvas && comparisonCanvas._dashboardData) {
+          Charts.renderComparisonChart(comparisonCanvas._dashboardData);
         }
       }, 80);
     }
@@ -325,6 +351,11 @@
   // ══════════════════════════════════════════════════════════════════════════
   //  INIT
   // ══════════════════════════════════════════════════════════════════════════
+  const dashboardStartButton = document.getElementById('btn-dashboard-start');
+  if (dashboardStartButton) {
+    dashboardStartButton.addEventListener('click', () => switchSection('predict'));
+  }
+
   await initialise();
 
 })();

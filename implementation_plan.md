@@ -1,8 +1,8 @@
-# GradeDex — Student Performance Prediction System
+# GradeDex - Student at Risk Prediction & Help
 
 ## Overview
 
-**GradeDex** is an end-to-end ML web application that predicts student academic performance using structured input data. Inspired by the research paper *"Predicting Student Performance Using Deep Learning and Machine Learning Techniques"*, but limited strictly to **Machine Learning** (no deep learning), with **XGBoost as the central model**.
+**GradeDex** is an end-to-end ML web application for student risk prediction, grade forecasting, and intervention support using structured input data. Inspired by the research paper *"Predicting Student Performance Using Deep Learning and Machine Learning Techniques"*, but limited strictly to **Machine Learning** (no deep learning).
 
 The app has a Python (FastAPI) backend with a trained ML pipeline and a rich, modern HTML/CSS/JS frontend.
 

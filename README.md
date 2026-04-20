@@ -1,11 +1,8 @@
-<<<<<<< HEAD
-# GradeDex-Student-at-Risk-Prediction-and-Help
-=======
-# GradeDex — Student Performance Prediction System
+# GradeDex - Student at Risk Prediction & Help
 
-An end-to-end ML web application that predicts student academic performance
-using **XGBoost** as the primary model, with robust missing-value handling
-and SMOTE for class imbalance.
+An end-to-end ML web application for student risk prediction, grade forecasting,
+and intervention support using an ordinal threshold ensemble with robust
+missing-value handling.
 
 ---
 
@@ -150,4 +147,3 @@ so the test set evaluation remains unbiased.
 - ✅ Feature importance chart (XGBoost)
 - ✅ Model comparison charts
 - ✅ Dark glass-morphism UI with animations
->>>>>>> e7cfeba (draft 1)
